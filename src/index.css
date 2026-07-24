@@ -1,0 +1,344 @@
+@import "tailwindcss";
+
+/* ============================================================================
+ * DESIGN TOKENS
+ * Light is the default (:root). Dark applies via prefers-color-scheme when no
+ * manual override is present, and via [data-theme] when the user forces a mode.
+ * Colorblind-safe good/bad/chart palette applies via `.cb` on the root element
+ * and must read correctly in every light/dark x normal/cb combination.
+ * ==========================================================================*/
+
+:root {
+  color-scheme: light;
+
+  /* Brand */
+  --felt: #0a4d34;
+  --felt-ink: #eef7ee;
+
+  /* Surfaces (slightly warm neutrals) */
+  --bg: #f5f4f0;
+  --surface: #ffffff;
+  --surface-2: #edeae4;
+  --panel: #ffffff;
+
+  /* Text */
+  --ink: #181611;
+  --ink-muted: #625d53;
+
+  /* Lines */
+  --border: #e3ddd3;
+
+  /* Refined gold accent (single) */
+  --accent: #c08a24;
+  --accent-hover: #a97a1a;
+  --accent-ink: #1c1405;
+
+  /* Semantic status */
+  --good: #1f9d55;
+  --good-ink: #ffffff;
+  --bad: #dc2626;
+  --bad-ink: #ffffff;
+  --warn: #d97706;
+  --warn-ink: #ffffff;
+
+  /* Focus ring */
+  --ring: var(--accent);
+
+  /* Categorical chart palette */
+  --chart-1: #1f9d55;
+  --chart-2: #c8912a;
+  --chart-3: #2563eb;
+  --chart-4: #dc2626;
+  --chart-5: #7c3aed;
+  --chart-6: #0891b2;
+
+  /* Spacing scale (8px grid) */
+  --space-1: 0.25rem; /* 4  */
+  --space-2: 0.5rem;  /* 8  */
+  --space-3: 0.75rem; /* 12 */
+  --space-4: 1rem;    /* 16 */
+  --space-5: 1.5rem;  /* 24 */
+  --space-6: 2rem;    /* 32 */
+  --space-7: 2.5rem;  /* 40 */
+  --space-8: 3rem;    /* 48 */
+
+  /* Radius */
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-full: 9999px;
+
+  /* Shadow (warm-tinted, a touch more depth) */
+  --shadow-sm: 0 1px 2px rgba(38, 28, 12, 0.07), 0 1px 3px rgba(38, 28, 12, 0.09);
+  --shadow-md: 0 2px 8px rgba(38, 28, 12, 0.10), 0 8px 20px rgba(38, 28, 12, 0.10);
+  --shadow-lg: 0 12px 34px rgba(38, 28, 12, 0.16), 0 4px 12px rgba(38, 28, 12, 0.10);
+}
+
+/* Dark via system preference (only when no manual override present) */
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --felt: #0e5539;
+    --felt-ink: #eef7ee;
+
+    --bg: #100e0b;
+    --surface: #1a1713;
+    --surface-2: #24211a;
+    --panel: #1e1b16;
+
+    --ink: #f3f1ea;
+    --ink-muted: #a19a8b;
+
+    --border: #2f2b23;
+
+    --accent: #e0b24a;
+    --accent-hover: #ecc061;
+    --accent-ink: #1c1405;
+
+    --good: #34c778;
+    --good-ink: #05130a;
+    --bad: #f2585b;
+    --bad-ink: #1a0404;
+    --warn: #f0a94a;
+    --warn-ink: #1c1200;
+
+    --chart-1: #34c778;
+    --chart-2: #e0b24a;
+    --chart-3: #5b8def;
+    --chart-4: #f2585b;
+    --chart-5: #a78bfa;
+    --chart-6: #22b8cf;
+
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.44), 0 1px 3px rgba(0, 0, 0, 0.55);
+    --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.5), 0 8px 20px rgba(0, 0, 0, 0.55);
+    --shadow-lg: 0 12px 34px rgba(0, 0, 0, 0.62), 0 4px 12px rgba(0, 0, 0, 0.55);
+  }
+}
+
+/* Manual override: force light regardless of system */
+:root[data-theme="light"] {
+  color-scheme: light;
+  --felt: #0a4d34;
+  --felt-ink: #eef7ee;
+  --bg: #f5f4f0;
+  --surface: #ffffff;
+  --surface-2: #edeae4;
+  --panel: #ffffff;
+  --ink: #181611;
+  --ink-muted: #625d53;
+  --border: #e3ddd3;
+  --accent: #c08a24;
+  --accent-hover: #a97a1a;
+  --accent-ink: #1c1405;
+  --good: #1f9d55;
+  --good-ink: #ffffff;
+  --bad: #dc2626;
+  --bad-ink: #ffffff;
+  --warn: #d97706;
+  --warn-ink: #ffffff;
+  --chart-1: #1f9d55;
+  --chart-2: #c08a24;
+  --chart-3: #2563eb;
+  --chart-4: #dc2626;
+  --chart-5: #7c3aed;
+  --chart-6: #0891b2;
+  --shadow-sm: 0 1px 2px rgba(38, 28, 12, 0.07), 0 1px 3px rgba(38, 28, 12, 0.09);
+  --shadow-md: 0 2px 8px rgba(38, 28, 12, 0.10), 0 8px 20px rgba(38, 28, 12, 0.10);
+  --shadow-lg: 0 12px 34px rgba(38, 28, 12, 0.16), 0 4px 12px rgba(38, 28, 12, 0.10);
+}
+
+/* Manual override: force dark regardless of system */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --felt: #0e5539;
+  --felt-ink: #eef7ee;
+  --bg: #100e0b;
+  --surface: #1a1713;
+  --surface-2: #24211a;
+  --panel: #1e1b16;
+  --ink: #f3f1ea;
+  --ink-muted: #a19a8b;
+  --border: #2f2b23;
+  --accent: #e0b24a;
+  --accent-hover: #ecc061;
+  --accent-ink: #1c1405;
+  --good: #34c778;
+  --good-ink: #05130a;
+  --bad: #f2585b;
+  --bad-ink: #1a0404;
+  --warn: #f0a94a;
+  --warn-ink: #1c1200;
+  --chart-1: #34c778;
+  --chart-2: #e0b24a;
+  --chart-3: #5b8def;
+  --chart-4: #f2585b;
+  --chart-5: #a78bfa;
+  --chart-6: #22b8cf;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.44), 0 1px 3px rgba(0, 0, 0, 0.55);
+  --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.5), 0 8px 20px rgba(0, 0, 0, 0.55);
+  --shadow-lg: 0 12px 34px rgba(0, 0, 0, 0.62), 0 4px 12px rgba(0, 0, 0, 0.55);
+}
+
+/* ----------------------------------------------------------------------------
+ * Colorblind-safe palette (blue = good, orange = bad). Overrides status +
+ * chart hues while keeping surface/ink from the active light/dark theme.
+ * Placed after the theme blocks so it wins in all four combinations.
+ * --------------------------------------------------------------------------*/
+:root.cb {
+  --good: #1d6fe0;
+  --good-ink: #ffffff;
+  --bad: #e8730c;
+  --bad-ink: #1a0d00;
+  --warn: #b8860b;
+  --warn-ink: #ffffff;
+  --chart-1: #1d6fe0;
+  --chart-2: #e8730c;
+  --chart-3: #0f9b8e;
+  --chart-4: #9d4edd;
+  --chart-5: #e6ab00;
+  --chart-6: #c2255c;
+}
+
+:root.cb[data-theme="dark"],
+:root.cb:where(:not([data-theme])) {
+  --good: #5b8def;
+  --good-ink: #04101f;
+  --bad: #f59440;
+  --bad-ink: #1a0d00;
+  --warn: #e0b24a;
+  --warn-ink: #1c1200;
+  --chart-1: #5b8def;
+  --chart-2: #f59440;
+  --chart-3: #2bc4b4;
+  --chart-4: #c08bf0;
+  --chart-5: #f2cd4a;
+  --chart-6: #ec5f8f;
+}
+
+/* Re-assert cb light values when light is forced (specificity tie-break). */
+:root.cb[data-theme="light"] {
+  --good: #1d6fe0;
+  --good-ink: #ffffff;
+  --bad: #e8730c;
+  --bad-ink: #1a0d00;
+  --warn: #b8860b;
+  --warn-ink: #ffffff;
+  --chart-1: #1d6fe0;
+  --chart-2: #e8730c;
+  --chart-3: #0f9b8e;
+  --chart-4: #9d4edd;
+  --chart-5: #e6ab00;
+  --chart-6: #c2255c;
+}
+
+/* ----------------------------------------------------------------------------
+ * Expose tokens as Tailwind v4 theme colors. `inline` keeps utilities pointed
+ * at the CSS vars so runtime theme swaps flow through automatically.
+ * --------------------------------------------------------------------------*/
+@theme inline {
+  --color-felt: var(--felt);
+  --color-felt-ink: var(--felt-ink);
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-panel: var(--panel);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-border: var(--border);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-ink: var(--accent-ink);
+  --color-good: var(--good);
+  --color-good-ink: var(--good-ink);
+  --color-bad: var(--bad);
+  --color-bad-ink: var(--bad-ink);
+  --color-warn: var(--warn);
+  --color-warn-ink: var(--warn-ink);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-chart-6: var(--chart-6);
+
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+  --radius-xl: var(--radius-xl);
+}
+
+/* ----------------------------------------------------------------------------
+ * Base
+ * --------------------------------------------------------------------------*/
+html, body, #root { height: 100%; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Optional premium felt texture for "play" surfaces (opt-in class). Layers a
+ * faint woven weave + soft center glow over the felt color for depth, without
+ * touching contrast of foreground ink. */
+.felt-texture {
+  background-color: var(--felt);
+  background-image:
+    radial-gradient(120% 90% at 50% 0%, rgba(255, 255, 255, 0.08), transparent 60%),
+    radial-gradient(120% 120% at 50% 120%, rgba(0, 0, 0, 0.22), transparent 55%),
+    repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.022) 0 2px, transparent 2px 4px),
+    repeating-linear-gradient(-45deg, rgba(0, 0, 0, 0.03) 0 2px, transparent 2px 4px);
+}
+
+/* Always-visible keyboard focus rings. */
+:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+/* Toast entrance. */
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(6px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.animate-in { animation: toast-in 150ms ease-out; }
+
+/* Card deal-in (table visuals). Reduced-motion guard below neutralizes it. */
+@keyframes card-deal {
+  from { opacity: 0; transform: translateY(-14px) rotate(-5deg) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0) rotate(0) scale(1); }
+}
+.animate-card-deal { animation: card-deal 160ms ease-out both; }
+
+/* First-run onboarding entrance. Reduced-motion guard below neutralizes these. */
+@keyframes onboarding-backdrop-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes onboarding-card-in {
+  from { opacity: 0; transform: translateY(12px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes onboarding-copy-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes onboarding-emblem-in {
+  from { opacity: 0; transform: translateY(8px) scale(0.9); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.onboarding-backdrop { animation: onboarding-backdrop-in 200ms ease-out both; }
+.onboarding-card { animation: onboarding-card-in 240ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+.onboarding-copy { animation: onboarding-copy-in 220ms ease-out both; }
+.onboarding-emblem { animation: onboarding-emblem-in 280ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+
+/* Respect reduced-motion everywhere. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
