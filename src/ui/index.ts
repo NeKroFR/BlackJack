@@ -25,6 +25,8 @@ export type {
   HeadingLevel,
 } from './Text'
 
+export { useMediaQuery, useIsDesktop, MD_QUERY } from './useMediaQuery'
+
 export { Stack } from './Stack'
 export type { StackProps, Gap, Align, Justify } from './Stack'
 

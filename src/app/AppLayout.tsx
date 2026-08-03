@@ -1,8 +1,10 @@
+import { useState } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
 import { IconButton, Inline, Text, Badge, cn, focusRing } from '../ui'
 import { useStore } from '../store'
 import { Onboarding } from '../onboarding'
 import { NAV_GROUPS, NAV_ITEMS, type NavItem } from './nav'
+import { ImmersiveProvider } from './screenMode'
 
 /** Cycle order for the theme toggle. */
 const THEME_ORDER = ['system', 'light', 'dark'] as const
@@ -136,11 +138,14 @@ function BottomTab({ item }: { item: NavItem }) {
 }
 
 export default function AppLayout() {
+  // Set by the live table: that route sizes itself to the shell and must not scroll.
+  const [immersive, setImmersive] = useState(false)
+
   return (
-    <div className="min-h-dvh bg-[var(--bg)] text-[var(--ink)]">
+    <div className="flex h-dvh flex-col overflow-hidden bg-[var(--bg)] text-[var(--ink)]">
       {/* Top bar */}
       <header
-        className="sticky top-0 z-30 border-b border-[var(--border)] bg-[var(--surface)]/95 backdrop-blur"
+        className="z-30 shrink-0 border-b border-[var(--border)] bg-[var(--surface)]/95 backdrop-blur"
         style={{ paddingTop: 'env(safe-area-inset-top)' }}
       >
         <div className="mx-auto flex h-14 max-w-[1400px] items-center gap-4 px-4">
@@ -159,9 +164,9 @@ export default function AppLayout() {
         </div>
       </header>
 
-      <div className="mx-auto flex max-w-[1400px]">
+      <div className="mx-auto flex w-full min-h-0 max-w-[1400px] flex-1">
         {/* Desktop side-nav */}
-        <aside className="sticky top-14 hidden h-[calc(100dvh-3.5rem)] w-60 shrink-0 overflow-y-auto border-r border-[var(--border)] px-3 py-4 md:block">
+        <aside className="hidden w-60 shrink-0 overflow-y-auto border-r border-[var(--border)] px-3 py-4 md:block">
           <nav aria-label="Primary">
             {NAV_GROUPS.map((group) => (
               <div key={group.heading} className="mb-4">
@@ -183,10 +188,26 @@ export default function AppLayout() {
           </div>
         </aside>
 
-        {/* Content */}
-        <main className="min-w-0 flex-1 px-4 py-5 pb-24 md:px-8 md:py-8 md:pb-8">
-          <div className="mx-auto max-w-5xl">
-            <Outlet />
+        {/* Content. Scrolls here rather than on the document, so the shell's
+            header and tab bar stay put and an immersive route can claim the
+            exact height between them. */}
+        <main
+          className={cn(
+            'min-w-0 flex-1',
+            immersive ? 'overflow-hidden md:overflow-y-auto' : 'overflow-y-auto',
+          )}
+        >
+          <div
+            className={cn(
+              'mx-auto w-full max-w-5xl',
+              immersive
+                ? 'h-full px-3 py-3 md:h-auto md:min-h-full md:px-8 md:py-8'
+                : 'min-h-full px-4 py-5 md:px-8 md:py-8',
+            )}
+          >
+            <ImmersiveProvider value={setImmersive}>
+              <Outlet />
+            </ImmersiveProvider>
           </div>
         </main>
       </div>
@@ -194,7 +215,7 @@ export default function AppLayout() {
       {/* Mobile bottom tab bar */}
       <nav
         aria-label="Primary"
-        className="fixed inset-x-0 bottom-0 z-30 border-t border-[var(--border)] bg-[var(--surface)]/95 backdrop-blur md:hidden"
+        className="z-30 shrink-0 border-t border-[var(--border)] bg-[var(--surface)]/95 backdrop-blur md:hidden"
         style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
       >
         <div className="flex gap-1 overflow-x-auto px-2 py-1.5">

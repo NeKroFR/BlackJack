@@ -32,8 +32,18 @@ export interface ActionBarProps {
   size?: ButtonSize
   /** Stretch each button to share the row equally. */
   block?: boolean
+  /**
+   * `row` wraps the actions inline. `grid` stacks Hit/Stand as two large
+   * thumb targets over a row of the remaining options and drops the key hints —
+   * the touch layout.
+   */
+  layout?: 'row' | 'grid'
   className?: string
 }
+
+/** Split of the action set used by the touch layout. */
+const PRIMARY_ACTIONS: Action[] = ['hit', 'stand']
+const SECONDARY_ACTIONS: Action[] = ['double', 'split', 'surrender']
 
 const SLOT_KEYS = {
   hit: 'hit',
@@ -59,6 +69,7 @@ export function ActionBar({
   onSpace,
   size = 'md',
   block,
+  layout = 'row',
   className,
 }: ActionBarProps) {
   const slots: Record<Action, ActionSlot | undefined> = {
@@ -86,6 +97,60 @@ export function ActionBar({
   }
   useActionKeys(keyHandlers, { enabled: keyboard })
 
+  const variantFor = (action: Action): ButtonVariant => {
+    if (recommend === action) return 'primary'
+    return action === 'surrender' ? 'ghost' : 'secondary'
+  }
+
+  if (layout === 'grid') {
+    const visible = (list: Action[]) => list.filter((a) => slots[a] && !slots[a]!.hidden)
+    const primary = visible(PRIMARY_ACTIONS)
+    const secondary = visible(SECONDARY_ACTIONS)
+
+    // Ghost has no border, which reads as a broken cell in a grid — every
+    // touch target here gets a visible edge unless it is the advised play.
+    const cell = (action: Action, height: string) => {
+      const slot = slots[action]!
+      return (
+        <Button
+          key={action}
+          variant={recommend === action ? 'primary' : 'secondary'}
+          block
+          disabled={slot.disabled}
+          onClick={slot.onClick}
+          className={cn(height, 'px-2')}
+        >
+          {ACTION_META[action].label}
+        </Button>
+      )
+    }
+
+    return (
+      <div
+        role="group"
+        aria-label="Player actions"
+        className={cn('flex w-full flex-col gap-2', className)}
+      >
+        {primary.length > 0 && (
+          <div
+            className="grid gap-2"
+            style={{ gridTemplateColumns: `repeat(${primary.length}, minmax(0, 1fr))` }}
+          >
+            {primary.map((a) => cell(a, 'h-13 text-base'))}
+          </div>
+        )}
+        {secondary.length > 0 && (
+          <div
+            className="grid gap-2"
+            style={{ gridTemplateColumns: `repeat(${secondary.length}, minmax(0, 1fr))` }}
+          >
+            {secondary.map((a) => cell(a, 'h-11 text-sm'))}
+          </div>
+        )}
+      </div>
+    )
+  }
+
   return (
     <Inline
       role="group"
@@ -98,13 +163,10 @@ export function ActionBar({
         const slot = slots[SLOT_KEYS[action]]
         if (!slot || slot.hidden) return null
         const meta = ACTION_META[action]
-        let variant: ButtonVariant = 'secondary'
-        if (recommend === action) variant = 'primary'
-        else if (action === 'surrender') variant = 'ghost'
         return (
           <Button
             key={action}
-            variant={variant}
+            variant={variantFor(action)}
             size={size}
             block={block}
             disabled={slot.disabled}

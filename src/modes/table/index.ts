@@ -10,6 +10,9 @@ export type {
 } from './useTableGame'
 
 export { TableFelt } from './TableFelt'
+export type { TableFeltProps } from './TableFelt'
+export { TableStatusBar } from './TableStatusBar'
+export type { TableStatusBarProps } from './TableStatusBar'
 export { CountPanel } from './CountPanel'
 export { HeatMeter } from './HeatMeter'
 export { BetControls } from './BetControls'

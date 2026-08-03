@@ -1,6 +1,6 @@
 // Table visuals: playing cards, hands, chips, and seats.
 
-export { PlayingCard } from './PlayingCard'
+export { PlayingCard, cardWidth } from './PlayingCard'
 export type { PlayingCardProps, PlayingCardSize } from './PlayingCard'
 
 export { CardHand } from './CardHand'

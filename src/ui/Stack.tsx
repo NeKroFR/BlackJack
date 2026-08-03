@@ -3,7 +3,7 @@ import type { HTMLAttributes } from 'react'
 import { cn } from './cn'
 
 export type Gap = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 8
-export type Align = 'start' | 'center' | 'end' | 'stretch'
+export type Align = 'start' | 'center' | 'end' | 'stretch' | 'baseline'
 export type Justify = 'start' | 'center' | 'end' | 'between' | 'around'
 
 const gapMap: Record<Gap, string> = {
@@ -22,6 +22,7 @@ const alignMap: Record<Align, string> = {
   center: 'items-center',
   end: 'items-end',
   stretch: 'items-stretch',
+  baseline: 'items-baseline',
 }
 
 const justifyMap: Record<Justify, string> = {

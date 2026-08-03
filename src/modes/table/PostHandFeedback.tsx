@@ -10,6 +10,9 @@ import { signedMoney } from './format'
 export interface PostHandFeedbackProps {
   pnl: number
   decisions: DecisionRecord[]
+  /** Collapse to a single unpanelled line — for the mobile dock, where the
+   *  per-decision breakdown would push the bet controls off screen. */
+  compact?: boolean
 }
 
 /**
@@ -17,10 +20,30 @@ export interface PostHandFeedbackProps {
  * each play's EV and whether it matched the engine's best line. This is where
  * the running "EV of your decisions" feedback lives.
  */
-export function PostHandFeedback({ pnl, decisions }: PostHandFeedbackProps) {
+export function PostHandFeedback({ pnl, decisions, compact = false }: PostHandFeedbackProps) {
   const tone = pnl > 0 ? 'good' : pnl < 0 ? 'bad' : 'muted'
   const label = pnl > 0 ? 'You won' : pnl < 0 ? 'You lost' : 'Push'
   const mistakes = decisions.filter((d) => !d.correct).length
+
+  if (compact) {
+    return (
+      <Inline justify="between" align="center" className="gap-2 border-b border-border pb-2">
+        <Inline gap={2} align="baseline">
+          <Text size="sm" weight="semibold" tone={tone}>
+            {label}
+          </Text>
+          <Text size="sm" weight="semibold" tone={tone} numeric>
+            {signedMoney(pnl)}
+          </Text>
+        </Inline>
+        {decisions.length > 0 && (
+          <Badge variant={mistakes === 0 ? 'good' : 'warn'} size="sm">
+            {mistakes === 0 ? 'All plays optimal' : `${mistakes} misplay${mistakes > 1 ? 's' : ''}`}
+          </Badge>
+        )}
+      </Inline>
+    )
+  }
 
   return (
     <Panel padding="md" elevation="raised" className="flex flex-col gap-3">

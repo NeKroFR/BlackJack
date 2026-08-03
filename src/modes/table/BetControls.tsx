@@ -1,7 +1,9 @@
+import type { ReactNode } from 'react'
 import { Panel } from '../../ui/Panel'
 import { Text } from '../../ui/Text'
 import { Button } from '../../ui/Button'
 import { Inline } from '../../ui/Inline'
+import { cn } from '../../ui/cn'
 import { Chip, ChipStack } from '../../ui/table'
 import { useSound } from '../../audio'
 import { CHIP_DENOMS, TABLE_MAX } from './useTableGame'
@@ -21,6 +23,13 @@ export interface BetControlsProps {
   rebuy: (amount: number) => void
   /** Label for the primary action (e.g. "Deal" vs "Next hand"). */
   dealLabel?: string
+  /**
+   * Touch layout: one tight column — readout, chip row, then a full-width Deal.
+   * Trades the roomy desktop arrangement for a dock that fits under the felt.
+   */
+  compact?: boolean
+  /** Extra content above the chips (e.g. the settled-hand summary on mobile). */
+  header?: ReactNode
 }
 
 /**
@@ -41,11 +50,65 @@ export function BetControls({
   onDeal,
   rebuy,
   dealLabel = 'Deal',
+  compact = false,
+  header,
 }: BetControlsProps) {
   const play = useSound()
+
+  /** A denomination button. Sized for a thumb in the compact dock. */
+  const chipButton = (d: number) => {
+    const disabled = pendingBet + d > effectiveMax
+    return (
+      <button
+        key={d}
+        type="button"
+        aria-label={`Add ${money(d)} chip`}
+        disabled={disabled}
+        onClick={() => {
+          play('chip')
+          addChip(d)
+        }}
+        className={cn(
+          'rounded-full transition-transform duration-150 hover:-translate-y-0.5 active:translate-y-0',
+          'disabled:opacity-35 disabled:pointer-events-none focus-visible:outline-none',
+          'focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:ring-offset-2',
+          'focus-visible:ring-offset-[var(--bg)]',
+        )}
+      >
+        <Chip value={d} size="md" />
+      </button>
+    )
+  }
+
+  // Tighter in the dock so they stay on the bet row: wrapping them onto their
+  // own line costs the felt about 40px of card height.
+  const quickClass = compact ? 'px-2 text-xs' : undefined
+  const quickButtons = (
+    <>
+      <Button size="sm" variant="ghost" className={quickClass} onClick={clearBet} disabled={pendingBet === 0}>
+        Clear
+      </Button>
+      <Button size="sm" variant="ghost" className={quickClass} onClick={() => { play('chip'); setPendingBet(tableMin) }}>
+        Min
+      </Button>
+      <Button size="sm" variant="ghost" className={quickClass} onClick={() => { play('chipStack'); setPendingBet(effectiveMax) }}>
+        Max
+      </Button>
+    </>
+  )
+
+  const deal = () => {
+    play('chipStack')
+    onDeal()
+  }
+
   if (busted) {
     return (
-      <Panel padding="lg" elevation="raised" className="flex flex-col items-center gap-3 text-center">
+      <Panel
+        padding={compact ? 'md' : 'lg'}
+        elevation="raised"
+        className="flex flex-col items-center gap-3 text-center"
+      >
         <Text size="lg" weight="semibold" tone="bad">
           Out of chips
         </Text>
@@ -66,6 +129,42 @@ export function BetControls({
   }
 
   const belowMin = pendingBet < tableMin
+
+  if (compact) {
+    return (
+      <Panel padding="none" elevation="raised" className="flex flex-col gap-2 p-2.5">
+        {header}
+
+        <Inline justify="between" align="center" wrap className="gap-2">
+          <Inline gap={2} align="baseline">
+            <Text as="span" size="sm" weight="medium">
+              Place your bet
+            </Text>
+            <Text as="span" size="lg" weight="semibold" tone={pendingBet > 0 ? 'accent' : 'muted'} numeric>
+              {money(pendingBet)}
+            </Text>
+          </Inline>
+          <Inline gap={1}>{quickButtons}</Inline>
+        </Inline>
+
+        {/* Chips scroll sideways rather than wrapping into a second row, which
+            would cost the felt another line of height. */}
+        <div className="-mx-2.5 flex gap-2 overflow-x-auto px-2.5 pb-0.5">
+          {CHIP_DENOMS.map(chipButton)}
+        </div>
+
+        <Button variant="primary" block onClick={deal} disabled={!canDeal} className="h-13 text-base">
+          {dealLabel}
+        </Button>
+
+        {belowMin && pendingBet > 0 && (
+          <Text size="xs" tone="warn">
+            Minimum bet is {money(tableMin)}.
+          </Text>
+        )}
+      </Panel>
+    )
+  }
 
   return (
     <Panel padding="lg" elevation="raised" className="flex flex-col gap-4">
@@ -90,48 +189,15 @@ export function BetControls({
         </div>
 
         <Inline gap={2} wrap>
-          {CHIP_DENOMS.map((d) => {
-            const disabled = pendingBet + d > effectiveMax
-            return (
-              <button
-                key={d}
-                type="button"
-                aria-label={`Add ${money(d)} chip`}
-                disabled={disabled}
-                onClick={() => {
-                  play('chip')
-                  addChip(d)
-                }}
-                className="rounded-full transition-transform duration-150 hover:-translate-y-0.5 disabled:opacity-35 disabled:pointer-events-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg)]"
-              >
-                <Chip value={d} size="md" />
-              </button>
-            )
-          })}
+          {CHIP_DENOMS.map(chipButton)}
         </Inline>
       </Inline>
 
       <Inline justify="between" align="center" wrap className="gap-2">
         <Inline gap={2} wrap>
-          <Button size="sm" variant="ghost" onClick={clearBet} disabled={pendingBet === 0}>
-            Clear
-          </Button>
-          <Button size="sm" variant="ghost" onClick={() => { play('chip'); setPendingBet(tableMin) }}>
-            Min
-          </Button>
-          <Button size="sm" variant="ghost" onClick={() => { play('chipStack'); setPendingBet(effectiveMax) }}>
-            Max
-          </Button>
+          {quickButtons}
         </Inline>
-        <Button
-          variant="primary"
-          size="lg"
-          onClick={() => {
-            play('chipStack')
-            onDeal()
-          }}
-          disabled={!canDeal}
-        >
+        <Button variant="primary" size="lg" onClick={deal} disabled={!canDeal}>
           {dealLabel}
         </Button>
       </Inline>

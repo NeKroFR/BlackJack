@@ -4,7 +4,7 @@ import type { Card } from '../../engine/types'
 import { handTotal, isBlackjack } from '../../engine/cards'
 import { cn } from '../cn'
 import { Badge } from '../Badge'
-import { PlayingCard, type PlayingCardSize } from './PlayingCard'
+import { PlayingCard, cardWidth, type PlayingCardSize } from './PlayingCard'
 
 export interface CardHandProps extends HTMLAttributes<HTMLDivElement> {
   cards: Card[]
@@ -19,8 +19,9 @@ export interface CardHandProps extends HTMLAttributes<HTMLDivElement> {
   dealIn?: boolean
 }
 
-// Horizontal overlap (px) between adjacent cards, per size.
-const OVERLAP: Record<PlayingCardSize, number> = { sm: 14, md: 22, lg: 28 }
+// Horizontal overlap between adjacent cards, as a fraction of card width, so a
+// hand tightens up in step with the cards when the table scales down.
+const OVERLAP_RATIO = 0.39
 
 type BadgeVariant = 'neutral' | 'good' | 'bad' | 'accent'
 
@@ -52,8 +53,10 @@ export const CardHand = forwardRef<HTMLDivElement, CardHandProps>(function CardH
     }
   }
 
+  const overlap = `calc(${cardWidth(size)} * ${-OVERLAP_RATIO})`
+
   return (
-    <div ref={ref} className={cn('inline-flex flex-col items-center gap-2', className)} {...rest}>
+    <div ref={ref} className={cn('inline-flex flex-col items-center gap-1.5', className)} {...rest}>
       <div className="flex items-end">
         {cards.map((card, i) => {
           const rot = fan ? (i - (n - 1) / 2) * 6 : 0
@@ -61,7 +64,7 @@ export const CardHand = forwardRef<HTMLDivElement, CardHandProps>(function CardH
             <div
               key={card.id}
               style={{
-                marginLeft: i === 0 ? 0 : -OVERLAP[size],
+                marginLeft: i === 0 ? 0 : overlap,
                 transform: fan ? `rotate(${rot}deg)` : undefined,
                 transformOrigin: 'bottom center',
                 zIndex: i,

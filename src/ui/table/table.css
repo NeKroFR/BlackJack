@@ -6,6 +6,37 @@
  * prefers-reduced-motion.
  */
 
+/* ---- Card geometry --------------------------------------------------------
+ * A card's width comes from a CSS variable and its height from a fixed 5:7
+ * aspect, and every glyph inside it is sized in `em` off that width. One
+ * variable therefore scales a card and its contents together, which lets a
+ * layout shrink the whole table without touching component props.
+ * -------------------------------------------------------------------------- */
+
+/* Fit-to-box scaling. `.tbl-fit` becomes a size query container; the scale
+ * class inside it derives the card width from the height the container was
+ * actually given, so the felt always lands inside one screen instead of
+ * guessing from a breakpoint.
+ *
+ * `--tbl-chrome` is the height the cards do not get: labels, total and result
+ * badges, seat padding. `--tbl-rows` is how many card-heights have to fit in
+ * what remains, already multiplied by the 1.4 that turns a card's height back
+ * into its width. Both are set by the caller, which knows how many rows it is
+ * about to render — see TableFelt. */
+.tbl-fit {
+  container-type: size;
+}
+
+.tbl-fit-scale {
+  --tbl-chrome: 8.5rem;
+  --tbl-rows: 2.8;
+  /* The ceiling runs above the 3.5rem desktop default: a tall phone has felt to
+   * spare once the dock is placed, and bigger cards read better in the hand. */
+  --tbl-card-md: clamp(1.375rem, calc((100cqh - var(--tbl-chrome)) / var(--tbl-rows)), 4.75rem);
+  --tbl-card-sm: calc(var(--tbl-card-md) * 0.64);
+  --tbl-card-lg: calc(var(--tbl-card-md) * 1.29);
+}
+
 /* ---- Playing card: 3D flip ------------------------------------------------ */
 
 .tbl-card {

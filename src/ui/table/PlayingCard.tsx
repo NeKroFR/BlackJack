@@ -23,30 +23,36 @@ const FACE_BG = '#fbfbf6'
 const INK = '#1a1c22'
 const RED = '#c62b38'
 
-interface SizeSpec {
-  box: string
-  radius: string
-  corner: string
-  cornerSuit: string
-  pip: string
+/**
+ * Per-size card width: a CSS variable a layout can override (see `.tbl-fit-scale`
+ * in table.css) with the fixed default as its fallback. Height and every glyph
+ * follow from this one value.
+ */
+const CARD_WIDTH: Record<PlayingCardSize, string> = {
+  sm: 'var(--tbl-card-sm, 2.25rem)',
+  md: 'var(--tbl-card-md, 3.5rem)',
+  lg: 'var(--tbl-card-lg, 4.5rem)',
 }
 
-const sizes: Record<PlayingCardSize, SizeSpec> = {
-  sm: { box: 'w-9 h-[3.25rem]', radius: '0.375rem', corner: 'text-[0.6875rem]', cornerSuit: 'text-[0.5rem]', pip: 'text-[1.35rem]' },
-  md: { box: 'w-14 h-20', radius: '0.5rem', corner: 'text-sm', cornerSuit: 'text-[0.7rem]', pip: 'text-[2.25rem]' },
-  lg: { box: 'w-[4.5rem] h-[6.5rem]', radius: '0.625rem', corner: 'text-lg', cornerSuit: 'text-xs', pip: 'text-[3.25rem]' },
+/** The resolved CSS width expression for a card size. */
+export function cardWidth(size: PlayingCardSize): string {
+  return CARD_WIDTH[size]
 }
+
+/** Playing-card proportions: height / width, and the em ratios of the face. */
+const ASPECT = '5 / 7'
+const FONT_RATIO = 0.25
 
 function rankLabel(rank: Rank): string {
   return rank === 'T' ? '10' : rank
 }
 
 /** Corner index (rank stacked over its suit glyph), reused top-left / bottom-right. */
-function CornerIndex({ rank, glyph, s }: { rank: string; glyph: string; s: SizeSpec }) {
+function CornerIndex({ rank, glyph }: { rank: string; glyph: string }) {
   return (
     <span className="flex flex-col items-center leading-[0.9]">
-      <span className={cn('font-bold tabular-nums', s.corner)}>{rank}</span>
-      <span className={s.cornerSuit}>{glyph}</span>
+      <span className="text-[1em] font-bold tabular-nums">{rank}</span>
+      <span className="text-[0.72em]">{glyph}</span>
     </span>
   )
 }
@@ -61,7 +67,7 @@ export const PlayingCard = forwardRef<HTMLDivElement, PlayingCardProps>(function
   { card, faceDown = false, size = 'md', dealIn = false, className, style, ...rest },
   ref,
 ) {
-  const s = sizes[size]
+  const w = CARD_WIDTH[size]
   const showBack = faceDown || !card
   const isRed = card ? card.suit === 'H' || card.suit === 'D' : false
   const color = isRed ? RED : INK
@@ -74,9 +80,12 @@ export const PlayingCard = forwardRef<HTMLDivElement, PlayingCardProps>(function
       role="img"
       aria-label={showBack ? 'Face-down card' : `${rl} of ${SUIT_NAME[card!.suit]}`}
       data-face={showBack ? 'down' : 'up'}
-      className={cn('tbl-card relative shrink-0 select-none', s.box, dealIn && 'tbl-deal', className)}
+      className={cn('tbl-card relative shrink-0 select-none', dealIn && 'tbl-deal', className)}
       style={{
-        borderRadius: s.radius,
+        width: w,
+        aspectRatio: ASPECT,
+        fontSize: `calc(${w} * ${FONT_RATIO})`,
+        borderRadius: '0.57em',
         boxShadow: '0 1px 2px rgba(0,0,0,0.28), 0 5px 12px rgba(0,0,0,0.2)',
         ...style,
       }}
@@ -91,14 +100,14 @@ export const PlayingCard = forwardRef<HTMLDivElement, PlayingCardProps>(function
         >
           {card && (
             <>
-              <div className="absolute top-1 left-1.5">
-                <CornerIndex rank={rl} glyph={glyph} s={s} />
+              <div className="absolute top-[0.28em] left-[0.42em]">
+                <CornerIndex rank={rl} glyph={glyph} />
               </div>
-              <div className={cn('absolute inset-0 grid place-items-center', s.pip)}>
+              <div className="absolute inset-0 grid place-items-center text-[2.6em]">
                 <span style={{ filter: 'drop-shadow(0 1px 0 rgba(0,0,0,0.08))' }}>{glyph}</span>
               </div>
-              <div className="absolute bottom-1 right-1.5 rotate-180">
-                <CornerIndex rank={rl} glyph={glyph} s={s} />
+              <div className="absolute bottom-[0.28em] right-[0.42em] rotate-180">
+                <CornerIndex rank={rl} glyph={glyph} />
               </div>
             </>
           )}
@@ -114,7 +123,7 @@ export const PlayingCard = forwardRef<HTMLDivElement, PlayingCardProps>(function
           }}
         >
           <div
-            className="absolute inset-1 rounded-[0.3rem] border"
+            className="absolute inset-[0.28em] rounded-[0.35em] border"
             style={{
               borderColor: 'rgba(255,255,255,0.32)',
               backgroundImage:

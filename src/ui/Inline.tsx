@@ -19,6 +19,7 @@ const alignMap: Record<Align, string> = {
   center: 'items-center',
   end: 'items-end',
   stretch: 'items-stretch',
+  baseline: 'items-baseline',
 }
 
 const justifyMap: Record<Justify, string> = {

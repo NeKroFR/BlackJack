@@ -5,7 +5,7 @@ import { cn } from '../cn'
 import { Text } from '../Text'
 import { CardHand } from './CardHand'
 import { ChipStack } from './Chip'
-import type { PlayingCardSize } from './PlayingCard'
+import { cardWidth, type PlayingCardSize } from './PlayingCard'
 import './table.css'
 
 /** Settled outcome for a seat. Drives the win/lose/push glow. */
@@ -27,12 +27,10 @@ export interface SeatProps extends HTMLAttributes<HTMLDivElement> {
   dealIn?: boolean
   /** Settled outcome. Applies a coloured win/lose/push glow around the seat. */
   result?: SeatResult
-}
-
-const placeholderDims: Record<PlayingCardSize, string> = {
-  sm: 'w-9 h-[3.25rem] rounded-md',
-  md: 'w-14 h-20 rounded-lg',
-  lg: 'w-[4.5rem] h-[6.5rem] rounded-lg',
+  /** Tighten padding and gaps — for height-constrained layouts (mobile felt). */
+  dense?: boolean
+  /** Hide the chip stack (the bet is shown elsewhere, e.g. the mobile dock). */
+  hideBet?: boolean
 }
 
 const RESULT_GLOW: Record<SeatResult, string> = {
@@ -45,7 +43,22 @@ const RESULT_GLOW: Record<SeatResult, string> = {
 
 /** A player seat: hand + bet + optional label. Highlights when active, glows on result. */
 export const Seat = forwardRef<HTMLDivElement, SeatProps>(function Seat(
-  { cards, bet, label, active = false, empty = false, size = 'md', holeCardIndex, dealIn = false, result, className, style, ...rest },
+  {
+    cards,
+    bet,
+    label,
+    active = false,
+    empty = false,
+    size = 'md',
+    holeCardIndex,
+    dealIn = false,
+    result,
+    dense = false,
+    hideBet = false,
+    className,
+    style,
+    ...rest
+  },
   ref,
 ) {
   const isEmpty = empty || !cards || cards.length === 0
@@ -64,7 +77,8 @@ export const Seat = forwardRef<HTMLDivElement, SeatProps>(function Seat(
       data-active={active || undefined}
       data-result={result || undefined}
       className={cn(
-        'flex flex-col items-center gap-2 rounded-xl p-3 border transition-[box-shadow,border-color] duration-150',
+        'flex flex-col items-center rounded-xl border transition-[box-shadow,border-color] duration-150',
+        dense ? 'gap-1 p-1.5' : 'gap-2 p-3',
         result ? 'tbl-seat-result' : active ? 'border-accent shadow-[var(--shadow-md)]' : 'border-transparent',
         className,
       )}
@@ -73,21 +87,25 @@ export const Seat = forwardRef<HTMLDivElement, SeatProps>(function Seat(
     >
       {isEmpty ? (
         <div
-          className={cn(
-            'flex items-center justify-center border border-dashed border-border text-ink-muted',
-            placeholderDims[size],
-          )}
+          className="flex items-center justify-center rounded-lg border border-dashed border-border text-ink-muted"
+          style={{ width: cardWidth(size), aspectRatio: '5 / 7' }}
         >
-          <span className="text-xs">Open</span>
+          <span className="text-[0.625rem]">Open</span>
         </div>
       ) : (
         <CardHand cards={cards!} size={size} holeCardIndex={holeCardIndex} dealIn={dealIn} />
       )}
 
-      {bet != null && bet > 0 && <ChipStack amount={bet} size={size === 'lg' ? 'md' : 'sm'} />}
+      {!hideBet && bet != null && bet > 0 && (
+        <ChipStack amount={bet} size={size === 'lg' ? 'md' : 'sm'} showTotal={!dense} />
+      )}
 
       {label && (
-        <Text size="sm" tone={active ? 'accent' : 'muted'} weight={active ? 'semibold' : 'medium'}>
+        <Text
+          size={dense ? 'xs' : 'sm'}
+          tone={active ? 'accent' : 'muted'}
+          weight={active ? 'semibold' : 'medium'}
+        >
           {label}
         </Text>
       )}

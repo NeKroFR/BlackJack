@@ -11,6 +11,15 @@ export interface FeltProps extends HTMLAttributes<HTMLDivElement> {
   soft17?: Rules['soft17']
   /** Number of bet spots drawn along the betting arc (default 5). */
   spots?: number
+  /**
+   * `full` draws the curved rule lettering. `minimal` keeps only the betting
+   * arc and its spots: on a narrow felt the SVG letterboxes into the middle
+   * band, which is exactly where the cards land, so the lettering reads as
+   * broken rather than as table printing.
+   */
+  markings?: 'full' | 'minimal'
+  /** Stretch to the height of the parent instead of hugging the contents. */
+  fill?: boolean
   /** Table contents (seats, cards, chips) rendered on top of the felt. */
   children?: ReactNode
 }
@@ -53,7 +62,17 @@ const INK = 'var(--felt-ink)'
  * seats and the hero hand inside via `children`.
  */
 export const Felt = forwardRef<HTMLDivElement, FeltProps>(function Felt(
-  { blackjackPayout = '3:2', soft17 = 'S17', spots = 5, children, className, style, ...rest },
+  {
+    blackjackPayout = '3:2',
+    soft17 = 'S17',
+    spots = 5,
+    markings = 'full',
+    fill = false,
+    children,
+    className,
+    style,
+    ...rest
+  },
   ref,
 ) {
   const spotPoints = Array.from({ length: Math.max(0, spots) }, (_, i) =>
@@ -63,7 +82,11 @@ export const Felt = forwardRef<HTMLDivElement, FeltProps>(function Felt(
   return (
     <div
       ref={ref}
-      className={cn('relative rounded-[1.75rem] p-3 sm:p-4', className)}
+      className={cn(
+        'relative rounded-[1.75rem] p-2 sm:p-4',
+        fill && 'flex h-full min-h-0 flex-col',
+        className,
+      )}
       style={{
         background: 'linear-gradient(150deg, #6b4a2b 0%, #4a301a 45%, #3a2513 100%)',
         boxShadow:
@@ -74,7 +97,10 @@ export const Felt = forwardRef<HTMLDivElement, FeltProps>(function Felt(
     >
       {/* Felt surface */}
       <div
-        className="relative overflow-hidden rounded-[1.15rem]"
+        className={cn(
+          'relative overflow-hidden rounded-[1.15rem]',
+          fill && 'flex min-h-0 flex-1 flex-col',
+        )}
         style={{
           background:
             'radial-gradient(120% 105% at 50% 30%, color-mix(in srgb, var(--felt) 80%, white 8%), color-mix(in srgb, var(--felt) 94%, black 3%) 62%, color-mix(in srgb, var(--felt) 80%, black 14%))',
@@ -96,32 +122,36 @@ export const Felt = forwardRef<HTMLDivElement, FeltProps>(function Felt(
           </defs>
 
           {/* "BLACKJACK PAYS 3 TO 2" curved over the felt */}
-          <text
-            fill={INK}
-            fillOpacity="0.9"
-            fontSize="34"
-            fontWeight="700"
-            letterSpacing="4"
-            textAnchor="middle"
-          >
-            <textPath href="#tbl-arc-title" startOffset="50%">
-              {PAYOUT_TEXT[blackjackPayout]}
-            </textPath>
-          </text>
+          {markings === 'full' && (
+            <text
+              fill={INK}
+              fillOpacity="0.9"
+              fontSize="34"
+              fontWeight="700"
+              letterSpacing="4"
+              textAnchor="middle"
+            >
+              <textPath href="#tbl-arc-title" startOffset="50%">
+                {PAYOUT_TEXT[blackjackPayout]}
+              </textPath>
+            </text>
+          )}
 
           {/* Dealer rule line, smaller, below the payout arc */}
-          <text
-            fill={INK}
-            fillOpacity="0.62"
-            fontSize="19"
-            fontWeight="600"
-            letterSpacing="3"
-            textAnchor="middle"
-          >
-            <textPath href="#tbl-arc-rule" startOffset="50%">
-              {SOFT17_TEXT[soft17]}
-            </textPath>
-          </text>
+          {markings === 'full' && (
+            <text
+              fill={INK}
+              fillOpacity="0.62"
+              fontSize="19"
+              fontWeight="600"
+              letterSpacing="3"
+              textAnchor="middle"
+            >
+              <textPath href="#tbl-arc-rule" startOffset="50%">
+                {SOFT17_TEXT[soft17]}
+              </textPath>
+            </text>
+          )}
 
           {/* Betting arc line */}
           <path
@@ -160,7 +190,7 @@ export const Felt = forwardRef<HTMLDivElement, FeltProps>(function Felt(
         <div aria-hidden className="tbl-felt-vignette" />
 
         {/* Live table contents */}
-        <div className="relative z-10">{children}</div>
+        <div className={cn('relative z-10', fill && 'flex min-h-0 flex-1 flex-col')}>{children}</div>
       </div>
     </div>
   )
