@@ -95,10 +95,9 @@ export function TableStatusBar({ c, className }: TableStatusBarProps) {
   const [open, setOpen] = useState(false)
   const masked = '••'
 
-  // The compact felt drops the chip stack to buy card height, so the wager
-  // lives here for as long as there is one on the table.
-  const live = c.state.phase !== 'idle' && c.state.phase !== 'settled'
-  const wager = live ? c.state.hero.hands.reduce((sum, h) => sum + h.bet, 0) : 0
+  // The compact felt drops the chip stack, so the wager lives here. Beside it
+  // goes the spendable figure: the gross bankroll double-counts the stake.
+  const wager = c.committed
 
   return (
     <>
@@ -125,7 +124,7 @@ export function TableStatusBar({ c, className }: TableStatusBarProps) {
 
           <span className="ml-auto flex items-center gap-1">
             <Metric
-              value={money(c.bankroll)}
+              value={money(c.available)}
               tone={c.sessionPnl > 0 ? 'good' : c.sessionPnl < 0 ? 'bad' : 'default'}
             />
             <IconButton
@@ -172,7 +171,8 @@ export function TableStatusBar({ c, className }: TableStatusBarProps) {
           <HeatMeter heat={c.heat} />
           <Panel padding="md" elevation="raised">
             <div className="grid grid-cols-3 gap-2">
-              <Metric label="Bank" value={money(c.bankroll)} />
+              {/* Session total, so unlike the strip it counts the felt stake. */}
+              <Metric label="Total" value={money(c.bankroll)} />
               <Metric
                 label="P/L"
                 value={signedMoney(c.sessionPnl)}

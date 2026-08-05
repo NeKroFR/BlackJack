@@ -160,4 +160,105 @@ describe('useTableGame integration', () => {
       vi.useRealTimers()
     }
   })
+
+  it('reports the stake as committed and takes it out of the available chips', () => {
+    vi.useFakeTimers()
+    try {
+      const { result } = renderHook(() =>
+        useTableGame({ rules: DEFAULT_RULES, systemId: 'hilo', seats: 0, seed: 4242, now: () => 1000 }),
+      )
+      expect(result.current.committed).toBe(0)
+      expect(result.current.available).toBe(1000)
+
+      act(() => result.current.setPendingBet(25))
+      act(() => result.current.requestDeal())
+
+      // The stake never leaves the raw bankroll, so `available` is the real one.
+      expect(result.current.bankroll).toBe(1000)
+      expect(result.current.committed).toBe(25)
+      expect(result.current.available).toBe(975)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('greys double only when the remaining chips cannot cover a second wager', () => {
+    vi.useFakeTimers()
+    try {
+      useStore.setState({ bankroll: 40 })
+      const { result } = renderHook(() =>
+        useTableGame({ rules: DEFAULT_RULES, systemId: 'hilo', seats: 0, seed: 4242, now: () => 1000 }),
+      )
+      act(() => result.current.setPendingBet(25))
+      act(() => result.current.requestDeal())
+      if (result.current.state.phase === 'insurance') {
+        act(() => result.current.takeInsurance(false))
+      }
+      expect(result.current.state.phase).toBe('playerTurn')
+      expect(result.current.available).toBe(15)
+      // Offered by the rules, but only $15 is left against a $25 bet.
+      expect(result.current.legalActions).toContain('double')
+      expect(result.current.unaffordable).toContain('double')
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('trims a pending bet the bankroll can no longer cover', () => {
+    const { result } = renderHook(() =>
+      useTableGame({ rules: DEFAULT_RULES, systemId: 'hilo', seats: 0, seed: 4242, now: () => 1000 }),
+    )
+    act(() => result.current.setPendingBet(500))
+    expect(result.current.pendingBet).toBe(500)
+
+    act(() => useStore.setState({ bankroll: 120 }))
+    expect(result.current.pendingBet).toBe(120)
+    expect(result.current.canDeal).toBe(true)
+
+    // And it never climbs back above the bankroll.
+    act(() => result.current.setPendingBet(5000))
+    expect(result.current.pendingBet).toBe(120)
+  })
+
+  it('restores a playable bet after a rebuy', () => {
+    useStore.setState({ bankroll: 3 })
+    const { result } = renderHook(() =>
+      useTableGame({ rules: DEFAULT_RULES, systemId: 'hilo', seats: 0, seed: 4242, now: () => 1000 }),
+    )
+    expect(result.current.busted).toBe(true)
+
+    act(() => result.current.rebuy(1000))
+
+    // Sized against the funded bankroll, not the busted one.
+    expect(result.current.busted).toBe(false)
+    expect(result.current.pendingBet).toBe(25)
+    expect(result.current.canDeal).toBe(true)
+  })
+
+  it('does not score a misplay for a double the bankroll cannot cover', () => {
+    vi.useFakeTimers()
+    try {
+      useStore.setState({ bankroll: 40 })
+      const { result } = renderHook(() =>
+        useTableGame({ rules: DEFAULT_RULES, systemId: 'hilo', seats: 0, seed: 9, now: () => 1000 }),
+      )
+      act(() => result.current.setPendingBet(25))
+      act(() => result.current.requestDeal())
+      if (result.current.state.phase === 'insurance') {
+        act(() => result.current.takeInsurance(false))
+      }
+      expect(result.current.state.phase).toBe('playerTurn')
+      expect(result.current.unaffordable).toContain('double')
+      expect(result.current.advice?.action).toBe('double')
+
+      // Double is out of reach, so hitting must not be graded against it.
+      act(() => result.current.doAction('hit'))
+      const rec = result.current.decisions[0]
+      expect(rec.best).not.toBe('double')
+      expect(rec.correct).toBe(true)
+      expect(result.current.mistakeFlag).toBeNull()
+    } finally {
+      vi.useRealTimers()
+    }
+  })
 })

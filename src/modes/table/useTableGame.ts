@@ -132,6 +132,10 @@ export interface TableController {
 
   // ---- session ----
   bankroll: number
+  /** Stake on the felt (hands + insurance). 0 between rounds. */
+  committed: number
+  /** Bankroll off the felt: what a double, split or insurance draws on. */
+  available: number
   sessionPnl: number
   handsPlayed: number
 
@@ -191,9 +195,15 @@ export function useTableGame(opts: UseTableGameOptions): TableController {
   })
 
   const setPendingBet = useCallback(
-    (n: number) => setPendingBetRaw(Math.max(0, Math.min(TABLE_MAX, Math.round(n)))),
-    [],
+    (n: number) => setPendingBetRaw(Math.max(0, Math.min(effectiveMax, Math.round(n)))),
+    [effectiveMax],
   )
+
+  // A losing round can leave a bet the bankroll no longer covers, which greys
+  // out every chip and Deal at once. Trim it to what is left instead.
+  useEffect(() => {
+    setPendingBetRaw((b) => Math.min(b, effectiveMax))
+  }, [effectiveMax])
   const addChip = useCallback(
     (denom: number) =>
       setPendingBetRaw((b) => Math.min(effectiveMax, Math.max(0, b) + denom)),
@@ -214,6 +224,11 @@ export function useTableGame(opts: UseTableGameOptions): TableController {
     [state],
   )
   const canAfford = useCallback((extra: number) => committed + extra <= bankroll, [committed, bankroll])
+
+  // Only the net P/L reaches `bankroll`, and only at settlement, so the raw
+  // figure still counts the stake on the felt. This is what is spendable.
+  const roundLive = state.phase !== 'idle' && state.phase !== 'settled'
+  const available = Math.floor(bankroll - (roundLive ? committed : 0))
 
   const baseBet = state.hero.baseBet
   const legalActions = game.legalActions
@@ -281,14 +296,18 @@ export function useTableGame(opts: UseTableGameOptions): TableController {
   // ---- grading + actions ----
   const gradeAndRecord = useCallback(
     (action: Action, dec: Decision, hand: PlayerHand, handIndex: number): DecisionRecord => {
-      const bestEv = dec.ranked[0]?.ev ?? 0
+      // Grade against the best play they could reach: a double the bankroll
+      // cannot cover is not one they passed up, so it is not a misplay.
+      const reachable = dec.ranked.find((a) => !unaffordable.includes(a.action))
+      const best = reachable?.action ?? dec.best
+      const bestEv = reachable?.ev ?? dec.ranked[0]?.ev ?? 0
       const chosenEv = dec.ranked.find((a) => a.action === action)?.ev ?? bestEv
-      const correct = action === dec.best || Math.abs(chosenEv - bestEv) < 1e-9
+      const correct = action === best || Math.abs(chosenEv - bestEv) < 1e-9
       const evDelta = Math.min(0, chosenEv - bestEv)
       const rec: DecisionRecord = {
         handIndex,
         chosen: action,
-        best: dec.best,
+        best,
         correct,
         chosenEv,
         bestEv,
@@ -299,7 +318,7 @@ export function useTableGame(opts: UseTableGameOptions): TableController {
         category: categoryFor(hand.cards),
         correct,
         chosen: action,
-        best: dec.best,
+        best,
         evDelta,
         handContext: {
           playerCards: hand.cards,
@@ -310,7 +329,7 @@ export function useTableGame(opts: UseTableGameOptions): TableController {
       })
       return rec
     },
-    [state, clock],
+    [state, clock, unaffordable],
   )
 
   const doAction = useCallback(
@@ -394,10 +413,13 @@ export function useTableGame(opts: UseTableGameOptions): TableController {
 
   const rebuy = useCallback(
     (amount: number) => {
-      setBankroll(Math.floor(bankroll) + amount)
-      setPendingBet(Math.min(unit, amount))
+      const funded = Math.floor(bankroll) + amount
+      setBankroll(funded)
+      // Size against the new bankroll: `setPendingBet` clamps to this render's
+      // `effectiveMax`, which is still the busted one.
+      setPendingBetRaw(Math.min(Math.max(TABLE_MIN, unit), funded))
     },
-    [bankroll, unit, setBankroll, setPendingBet],
+    [bankroll, unit, setBankroll],
   )
 
   return {
@@ -447,6 +469,8 @@ export function useTableGame(opts: UseTableGameOptions): TableController {
     lastPnl,
 
     bankroll: Math.floor(bankroll),
+    committed: roundLive ? committed : 0,
+    available,
     sessionPnl,
     handsPlayed,
 

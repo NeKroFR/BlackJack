@@ -50,7 +50,8 @@ function SessionSummary({ c }: { c: TableController }) {
   return (
     <Panel padding="md" elevation="raised">
       <Inline gap={5} wrap>
-        <Stat label="Bankroll" value={money(c.bankroll)} />
+        {/* Chips off the felt: the gross bankroll counts the live stake too. */}
+        <Stat label={c.committed > 0 ? 'Chips left' : 'Bankroll'} value={money(c.available)} />
         <Stat label="Session P/L" value={signedMoney(c.sessionPnl)} tone={pnlTone} />
         <Stat label="Hands" value={String(c.handsPlayed)} />
       </Inline>
@@ -102,6 +103,22 @@ function AdviceLine({ c }: { c: TableController }) {
   )
 }
 
+/**
+ * Why Double/Split are greyed. Illegal plays are hidden instead, so a dead
+ * button only ever means the chips cannot cover a second wager.
+ */
+function AffordabilityNote({ c }: { c: TableController }) {
+  if (c.unaffordable.length === 0) return null
+  const labels = c.unaffordable.map((a) => ACTION_META[a].label)
+  const names = labels.length > 1 ? `${labels.slice(0, -1).join(', ')} and ${labels.at(-1)}` : labels[0]
+  return (
+    <Text size="xs" tone="warn">
+      {names} {labels.length > 1 ? 'need' : 'needs'} another {money(c.state.hero.baseBet)} — you have{' '}
+      {money(c.available)} left.
+    </Text>
+  )
+}
+
 /** Dealer-shows-Ace insurance offer. */
 function InsurancePrompt({ c }: { c: TableController }) {
   return (
@@ -134,7 +151,7 @@ function InsurancePrompt({ c }: { c: TableController }) {
       </Inline>
       {!c.canAffordInsurance && (
         <Text size="xs" tone="warn">
-          Not enough bankroll to cover the insurance bet.
+          Not enough chips for insurance — {money(c.available)} left.
         </Text>
       )}
     </Panel>
@@ -195,6 +212,7 @@ function ControlBar({ c }: { c: TableController }) {
           surrender={slot('surrender')}
           recommend={c.advice?.action}
         />
+        <AffordabilityNote c={c} />
       </Panel>
     )
   }
@@ -277,6 +295,11 @@ function MobileDock({ c }: { c: TableController }) {
             No thanks
           </Button>
         </div>
+        {!c.canAffordInsurance && (
+          <Text size="xs" tone="warn">
+            Not enough chips for insurance — {money(c.available)} left.
+          </Text>
+        )}
       </Panel>
     )
   }
@@ -316,6 +339,7 @@ function MobileDock({ c }: { c: TableController }) {
           surrender={slot('surrender')}
           recommend={c.advice?.action}
         />
+        <AffordabilityNote c={c} />
       </Panel>
     )
   }
